@@ -1,0 +1,67 @@
+---
+title: "Task 1 Analysis"
+author: "Harry Williams"
+date: "09/11/2020"
+output: html_document
+---
+## Packages
+```{r}
+library(tidyverse)
+library(here)
+```
+
+## Data
+```{r}
+decathlon_results <- read_csv(here("clean_data/clean_decathlon_results.csv"))
+```
+
+## Q1. Who had the longest long jump seen in the data?
+
+```{r}
+decathlon_results %>% 
+  select(athlete, long_jump) %>% 
+  slice_max(long_jump, n = 1)
+```
+
+
+## What was the average 100m time in each competition?
+```{r}
+decathlon_results %>% 
+  group_by(competition) %>% 
+  summarise(avg_100m_time = mean(x100m))
+```
+
+## Who had the highest total points across both competitions?
+```{r}
+decathlon_results %>% 
+  group_by(athlete) %>% 
+  summarise(total_points = sum(points)) %>% 
+  slice_max(total_points, n = 1)
+```
+
+## What was the shot-put scores for the top three competitors in each competition?
+### Decastar
+```{r}
+decathlon_results %>% 
+  filter(competition == "decastar") %>% 
+  select(athlete, shot_put) %>% 
+  slice_max(shot_put, n = 3)
+    
+```
+### Olympic Games
+```{r}
+decathlon_results %>% 
+  filter(competition == "olympic_games") %>% 
+  select(athlete, shot_put) %>% 
+  slice_max(shot_put, n = 3)
+    
+```
+## What was the average points for competitors who ran the 400m in less than 50 seconds vs. those than ran 400m in more than 50 seconds?
+```{r}
+decathlon_results %>% 
+  mutate(x400m_time = ifelse(x400m < 50, "400m under 50 seconds", "400m over 50 seconds")) %>% 
+  group_by(x400m_time) %>% 
+  summarise(avg_points = mean(points))
+
+
+```
