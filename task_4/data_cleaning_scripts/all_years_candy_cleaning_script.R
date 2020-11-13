@@ -115,7 +115,7 @@ candy_2017_long %>%
   ))
 
 
-candy_all <- rbind(candy_2015_long, candy_2016_long, candy_2017_long)
+candy_all <- bind_rows(candy_2015_long, candy_2016_long, candy_2017_long)
 
 candy_all <- candy_all %>%
   drop_na(rating)
@@ -167,7 +167,6 @@ candy_all_country <- candy_all_trick_or_treating %>%
     str_detect(country, "states") ~ "us",
     str_detect(country, "north carolina") ~ "us",
     str_detect(country, "yoo ess") ~ "us",
-    str_detect(country, "trump") ~ "us",
     str_detect(country, "california") ~ "us",
     str_detect(country, "new york") ~ "us",
     str_detect(country, "merca") ~ "us",

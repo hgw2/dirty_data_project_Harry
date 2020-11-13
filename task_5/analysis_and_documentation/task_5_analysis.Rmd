@@ -96,7 +96,7 @@ With the data we can see that those with a high school education took the longes
 ```{r, message = FALSE}
 education_time %>% 
   ggplot(aes(education, avg_time_mins)) + 
-  geom_bar(stat="identity", fill = "blue")
+  geom_bar(stat="identity", fill = "#9DED10")
 ```
 
 This plot shows that most people completed the test and survey at a similar time regardless of education level. 
