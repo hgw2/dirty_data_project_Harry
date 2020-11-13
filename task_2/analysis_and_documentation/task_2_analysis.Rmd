@@ -1,0 +1,98 @@
+---
+title: "Task 2 Analysis"
+author: "Harry Williams"
+date: "10/11/2020"
+output: 
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_float: yes
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Packages 
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(here)
+```
+
+# Data
+```{r, message=FALSE}
+cake_ingredients <- read_csv(here("clean_data/cake_ingredients.CSV"))
+```
+
+The data comes from Table 12.8 in Chapter 12 of Hartigan (1975) on page 229. It gives a list of cakes and their ingredients. It also gives the quantities of each ingredient.
+
+## Cleaning the data
+
+The dataset was made long for better analysis. All the ingredients were listed as abbreviations so a second data set with the abbreviations were added. the Sour Cream measurement was changed to cup and eggs were changed to whole.
+
+# Analysis
+
+## Q1 - Which cake has the most cocoa in it?
+
+```{r}
+cake_ingredients %>%
+  filter(ingredient == "cocoa") %>%
+  slice_max(quantity)
+```
+One bowl chocolate cake had the most cocoa with 10 table spoons 
+
+## Q2 - For sponge cake, how many cups of ingredients are used in total?
+
+```{r, message=FALSE}
+cake_ingredients %>%
+  filter(cake == "sponge", measure == "cup") %>%
+  group_by(cake) %>%
+  summarise(total_cups = sum(quantity))
+```
+
+In sponge cake there were 3.5 cups worth of ingredients (not including teaspoon measurements).
+
+## Q3 - How many ingredients are measured in teaspoons?
+
+```{r}
+cake_ingredients %>%
+  filter(measure == "teaspoon") %>%
+  distinct(ingredient) %>%
+  summarise(number_of_ingredients_using_teaspoons = n())
+```
+
+In total 8 ingredient were measured in teaspoons.
+
+## Q4 - Which cake has the most unique ingredients? 
+This question was a bit ambiguous so two answers were given.
+
+```{r, message=FALSE}
+cake_ingredients %>%
+  group_by(ingredient) %>%
+  mutate(count = n()) %>% # find how many times each ingredient is used
+  ungroup() %>%
+  filter(count == 1) %>%
+  group_by(cake) %>%
+  summarise(number_of_unique_ingredients = n())
+```
+In total angel cake has the most number of unique ingredients.
+
+
+
+```{r, message=FALSE}
+cake_ingredients %>%
+  group_by(cake) %>%
+  summarise(number_of_ingredients = n()) %>%
+  slice_max(number_of_ingredients)
+```
+
+Alternatively if the question is asking how many ingredients then babas au rhum and one bowl chocolate cake both contain the most number of ingredients 
+
+## Q5 - Which ingredients are used only once?
+```{r , message=FALSE}
+cake_ingredients %>%
+  group_by(ingredient) %>%
+  summarise(number_of_times_used = n()) %>%
+  filter(number_of_times_used == 1)
+```
+
+There are 8 ingredients which are only used once. 

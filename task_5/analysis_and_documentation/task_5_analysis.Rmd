@@ -1,0 +1,120 @@
+---
+title: "Task 5 analysis RWA test"
+author: "Harry Williams"
+date: "11/11/2020"
+output: 
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_float: yes
+---
+# Packages
+```{r, message = FALSE}
+library(tidyverse)
+library(here)
+```
+
+# Data 
+```{r, message = FALSE}
+rwa_responses <- read_csv(here("clean_data/rwa_responses_clean"))
+
+```
+The data was collected through an interactive on-line version of the Right-wing Authoritarianism Scale in 2015.
+
+## Cleaning the data
+
+### RWA score
+
+ The test records the responses to 22 questions. The participants were then invited to complete a survey to gather the background of that individual. 
+
+The responses to the questions were given a value from 1 to 9. Questions 4, 6, 8, 9, 11, 13, 15, 18, 20, 21 were all negatively scored so the overall response was multiplied by -1 to give it a negative score. 
+
+The decision was made to drop responses with incomplete tests as these impacted the final score so  responses with all questions answered were included in the final dataset
+
+To calculate the final score the mean score from questions 3 to 22 was given. This gave a score between -4 and 4,was  4 to the final score to make it positive, divided by 8 and multiplied by 100 to give a percentage score. This makes analysis easier to interpret. A score over 50 indicated  right wing leaning whilst under 50 indicates left wing. the closer to 50 the more centralist the participant was. 
+
+
+### Survey results
+
+The majority of the survey results were given numerical responses. Using the txt document provided these score were re-coded to match the answer. For answers that were given a value of 0, the response was re-coded to not answered.
+
+There were unreasonable age and family size. Seeing as only ages over the age of 13 were recorded I usedthe appropriate age range between 13 and 85 as 85 is largest life expectancy for any country. For ages that fell outside this range or recoded as NA the median value was imputed. A new column was added to flag this. The ages were then grouped into appropriate age ranges.
+
+The same also applied to family size. For family sizes greater than 10 and NA values these too were imputed with median family size. The imputed values were also flagged in a separate column.
+
+With time taken, there are a number of outliers or really long test times. THis could have been for a number of reasons e.g being distracted whilst taking the test or leaving the test open. Seeing as the vast majority of the response time is under 20 minutes the responses that took over 20 minutes (1200 seconds) were imputed with the median time. Again these are flagged in a separate column 
+
+# Analysis
+## Q1 What’s the average RWA score for each gender?
+
+
+```{r, message=FALSE}
+rwa_responses %>% 
+  group_by(gender) %>% 
+  summarise(avg_score = mean(score))
+```
+The average participant was more left wing leaning with Males more likely to have right wing views with those who do not identify as either male or female were more left wing leaning. 
+
+## Q2 What’s the average RWA score for left handed people vs. right handed people.
+
+```{r, message=FALSE}
+rwa_responses %>% 
+  group_by(hand) %>% 
+  summarise(avg_score = mean(score))
+```
+Interestingly those who did not answer this question had higher right wing views. Those who are ambidextrous are more right wing leaning. Fittingly those who are right handed are, on average, more right wing than those who are left handed. 
+
+
+## Q3 What’s the average family size for each type of childhood?
+
+
+```{r, message=FALSE}
+rwa_responses %>% 
+  group_by(urban) %>% 
+  summarise(avg_score = mean(familysize))
+```
+
+The average family size is around 2.5. Those from rural upbringings on average have larger family size than those in the suburbs or cities. 
+
+
+## Q4 What’s the average time to take the test for each education level?
+
+```{r, message=FALSE}
+education_time <- rwa_responses %>% 
+  group_by(education) %>% 
+  summarise(avg_time_sec = mean(total_time_taken), count = n()) %>% 
+  mutate(avg_time_mins = avg_time_sec/60)
+
+education_time
+```
+
+With the data we can see that those with a high school education took the longest with those not answering the question taking the shortest time. This is not really surprising as those who did not answer all the survey questions would not have spent time answering the questions. 
+
+## Q5 Create a plot of results of question 4.
+
+
+```{r, message = FALSE}
+education_time %>% 
+  ggplot(aes(education, avg_time_mins)) + 
+  geom_bar(stat="identity", fill = "blue")
+```
+
+This plot shows that most people completed the test and survey at a similar time regardless of education level. 
+
+## Q6 What’s the average RWA score for people aged:
+
+Under 18  
+18 to 25  
+26 to 40  
+41 to 60  
+Over 60  
+
+
+```{r, message = FALSE}
+rwa_responses %>% 
+  group_by(age_group) %>% 
+  summarise(avg_score = mean(score))
+```
+
+Interestingly the younger participants are on average were more right wing than the older participants. This could have been a limitation of the survey as this is not inline with the rest of society. 
+

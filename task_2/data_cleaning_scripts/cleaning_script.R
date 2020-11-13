@@ -24,7 +24,7 @@ full_ingredients <- cake_ingredients_long %>%
   mutate(cake = str_to_lower(cake)) %>%
   mutate(ingredient = str_to_lower(ingredient))
 
-# Changed Sour Cream NA-----
+# Changed Sour Cream Name-----
 
 full_ingredients <- full_ingredients %>%
   select(cake, quantity, measure, ingredient) %>%

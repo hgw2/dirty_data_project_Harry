@@ -1,0 +1,96 @@
+---
+title: "Task 1 Analysis"
+author: "Harry Williams"
+date: "09/11/2020"
+output: 
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_float: yes
+---
+
+# Packages
+```{r, message=FALSE}
+library(tidyverse)
+library(here)
+```
+
+# Data
+```{r, message=FALSE}
+decathlon_results <- read_csv(here("clean_data/clean_decathlon_results.csv"))
+```
+
+The data comes from 2 Decathlon competitions, Decastar and the Olympic Games. 
+
+## Cleaning the data
+
+The athletes names which were row titles were moved into their own column. The olympicg column became olympic_games for clarity.
+
+# Analysis
+
+## Q1. Who had the longest long jump seen in the data?
+
+```{r}
+decathlon_results %>%
+  select(athlete, event, result) %>%
+  filter(event == "long_jump") %>%
+  slice_max(result, n = 1)
+```
+
+The athlete Clay had the longest jump of 7.96m.
+
+## Q2. What was the average 100m time in each competition?
+
+```{r, message = FALSE}
+decathlon_results %>%
+  filter(event == "x100m") %>%
+  group_by(competition) %>%
+  summarise(avg_100m_time = mean(result))
+```
+
+The Olympic Games had the fastest average 100m time. This is not surprising as the Olympics are the most important event for a decathlete.
+
+
+## Q3. Who had the highest total points across both competitions?
+
+```{r, message=FALSE}
+decathlon_results %>%
+  group_by(athlete) %>%
+  summarise(total_points = sum(points)) %>%
+  slice_max(total_points, n = 1)
+```
+The athlete Sebrle has the highest number of points across both competitions. With over 17110 points.
+
+
+## Q4. What was the shot-put scores for the top three competitors in each competition?
+### Decastar
+
+```{r, message=FALSE}
+decathlon_results %>%
+  filter(competition == "decastar" & event == "shot_put") %>%
+  select(athlete, event, result) %>%
+  slice_max(result, n = 3)
+```
+
+### Olympic Games
+
+```{r,message=FALSE}
+decathlon_results %>%
+  filter(competition == "olympic_games" & event == "shot_put") %>%
+  select(athlete, event, result) %>%
+  slice_max(result, n = 3)
+```
+
+
+Sebrle and Karpov both appear in the top 2 across both competitions. With Sebrle being the better competitor across both.
+
+## Q5. What was the average points for competitors who ran the 400m in less than 50 seconds vs. those than ran 400m in more than 50 seconds?
+
+```{r, message=FALSE}
+decathlon_results %>%
+  filter(event == "x400m") %>%
+  mutate(x400m_time = ifelse(result < 50, "400m under 50 seconds", "400m over 50 seconds")) %>%
+  group_by(x400m_time) %>%
+  summarise(avg_points = mean(points))
+```
+Those running the 400m in under 50 seconds scored more points than those who ran a total time of over 50 seconds.

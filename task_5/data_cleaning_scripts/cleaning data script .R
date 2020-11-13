@@ -1,11 +1,21 @@
 # Packages ----
 library(tidyverse)
 library(janitor)
+library(assertr)
 
 # read in data
 
 rwa_data <- read_csv("raw_data/rwa.csv") %>%
   select(-(E1:E22), -(TIPI1:VCL16), -screenw, -screenh)
+
+country_codes <- read.csv("raw_data/country_codes.csv") %>%
+  clean_names() %>%
+  select(-alpha_3_code) %>%
+  rowid_to_column() %>%
+  filter(!rowid %in% c("26", "33", "55", "119", "128", "155", "187", "194", "195", "222", "246", "248")) %>%
+  select(-rowid)
+
+
 
 # Drop NA - There are c. 200 response where responses to questions are not given,
 # seeing as this skews the data I have decided to drop the NAs
@@ -25,7 +35,7 @@ rwa_multiplied <- rwa_data_drop_na %>%
 rwa_scores <- rwa_multiplied %>%
   rowwise() %>%
   mutate(score = mean(c_across(Q3:Q22), na.rm = TRUE)) %>%
-  mutate(score = (((score + 4) / 8) * 100))
+  mutate(score = (((score + 4)  / 8) * 100))
 
 # Add time taking to complete the survey (not including welcome page)
 # We now don't need the question responses so remove questions
@@ -34,10 +44,19 @@ rwa_condensed <- rwa_scores %>%
   mutate(total_time_taken = testelapse + surveyelapse) %>%
   select(-(Q1:Q22), -(introelapse:surveyelapse))
 
-# Add values to education
 
-rwa_education <- rwa_condensed %>%
-  mutate(education = as.integer(if_else(education < 1, mean(rwa_condensed$education), education))) %>% 
+# Add country to code
+rwa_country <- rwa_condensed %>%
+  left_join(country_codes, by = c("IP_country" = "alpha_2_code"), na_matches = "never") %>%
+  relocate(country, .before = IP_country) %>%
+  select(-IP_country) %>%
+  mutate(country = str_to_lower(country))
+
+
+# Cleaned education column ------
+
+rwa_education <- rwa_country %>%
+  verify(education >= 0 & education <= 4) %>%
   mutate(education = case_when(
     education == 1 ~ "less than high school",
     education == 2 ~ "high school",
@@ -46,22 +65,21 @@ rwa_education <- rwa_condensed %>%
     TRUE ~ "not answered"
   ))
 
-# Add values to urban
+# Cleaned urban column ----
 
 rwa_urban <- rwa_education %>%
-  mutate(urban= as.integer(if_else(urban < 1, mean(rwa_education$urban), urban))) %>% 
+  verify(urban >= 0 & urban <= 3) %>%
   mutate(urban = case_when(
     urban == 1 ~ "rural",
     urban == 2 ~ "suburban",
     urban == 3 ~ "urban",
     TRUE ~ "not answered"
-    
   ))
 
-# Add values to gender
+# Cleaned gender column ----
 
 rwa_gender <- rwa_urban %>%
-  mutate(gender= as.integer(if_else(gender < 1, mean(rwa_urban$gender), gender))) %>% 
+  verify(gender >= 0 & gender <= 3) %>%
   mutate(gender = case_when(
     gender == 1 ~ "male",
     gender == 2 ~ "female",
@@ -70,18 +88,18 @@ rwa_gender <- rwa_urban %>%
   ))
 
 
-# engnat add values
+# Cleaned engnat column -------
 rwa_engnat <- rwa_gender %>%
-  mutate(engnat= as.integer(if_else(engnat < 1, mean(rwa_gender$engnat), engnat))) %>% 
+  verify(engnat >= 0 & engnat <= 2) %>%
   mutate(engnat = case_when(
     engnat == 1 ~ "yes",
     engnat == 2 ~ "no",
     TRUE ~ "not answered"
   ))
 
-# add values to hand
+# Cleaned hand column ------
 rwa_hand <- rwa_engnat %>%
-  mutate(hand = as.integer(if_else(hand < 1, mean(rwa_engnat$hand), hand))) %>% 
+  verify(hand >= 0 & hand <= 3) %>%
   mutate(hand = case_when(
     hand == 1 ~ "right",
     hand == 2 ~ "left",
@@ -89,10 +107,10 @@ rwa_hand <- rwa_engnat %>%
     TRUE ~ "not answered"
   ))
 
-# add values to religion
+# Cleaned religion column -----
 
 rwa_religion <- rwa_hand %>%
-  mutate(religion = (if_else(religion < 1, mean(rwa_hand$religion), religion))) %>% 
+  verify(religion >= 0 & religion <= 12) %>%
   mutate(religion = case_when(
     religion == 1 ~ "agnostic",
     religion == 2 ~ "atheist",
@@ -109,43 +127,44 @@ rwa_religion <- rwa_hand %>%
     TRUE ~ "not answered"
   ))
 
-# fixed orientation 
+# Cleaned orientation column ----
 
-rwa_orientation <- rwa_religion %>% 
-  mutate(orientation = (if_else(orientation< 1, mean(rwa_religion$orientation), orientation))) %>% 
+rwa_orientation <- rwa_religion %>%
+  verify(orientation >= 0 & orientation <= 5) %>%
   mutate(orientation = case_when(
- orientation == 1~"heterosexual", 
- orientation ==2~"bisexual", 
- orientation == 3~"homosexual",
- orientation ==4~"asexual", 
- orientation ==5~"other",
- TRUE ~ "not answered"
-  ))
-# race
-
-rwa_race <- rwa_orientation %>% 
-  mutate(race = as.integer(if_else(race < 1, mean(rwa_orientation$race), race))) %>% 
-  mutate(race = case_when(
-    race == 1~ "asian", 
-    race == 2~ "arab", 
-    race ==3~"black", 
-    race ==4~"indigenous australian, native american or white", 
-    race ==5~"other",
+    orientation == 1 ~ "heterosexual",
+    orientation == 2 ~ "bisexual",
+    orientation == 3 ~ "homosexual",
+    orientation == 4 ~ "asexual",
+    orientation == 5 ~ "other",
     TRUE ~ "not answered"
   ))
 
-# voted 
+# Cleaned race column -----
+
+rwa_race <- rwa_orientation %>%
+  verify(race >= 0 & race <= 5) %>%
+  mutate(race = case_when(
+    race == 1 ~ "asian",
+    race == 2 ~ "arab",
+    race == 3 ~ "black",
+    race == 4 ~ "indigenous australian, native american or white",
+    race == 5 ~ "other",
+    TRUE ~ "not answered"
+  ))
+
+# Cleaned voted column -----
 rwa_voted <- rwa_race %>%
-  mutate(race = as.integer(if_else(voted < 1, mean(rwa_race$voted), voted))) %>% 
+  verify(voted >= 0 & voted <= 2) %>%
   mutate(voted = case_when(
     voted == 1 ~ "yes",
     voted == 2 ~ "no",
     TRUE ~ "not answered"
   ))
 
-# Married
+# Cleaned married column ------
 rwa_married <- rwa_voted %>%
-  mutate(married = as.integer(if_else(married < 1, mean(rwa_voted$married), married))) %>%
+  verify(married >= 0 & married <= 3) %>%
   mutate(married = case_when(
     married == 1 ~ "never married",
     married == 2 ~ "currently married",
@@ -153,11 +172,57 @@ rwa_married <- rwa_voted %>%
     TRUE ~ "not answered"
   ))
 
-# remove inaccurate responses
+# Cleaned ages and created age group ---
 
-rwa_responses <- rwa_married %>% 
+rwa_ages <- rwa_married %>%
+  mutate(age_imputed = if_else(age > 85, TRUE, FALSE)) %>%
+  mutate(age = if_else(age > 85, NaN, age)) %>%
+  mutate(age = coalesce(age, median(rwa_married$age, na.rm = TRUE)))
+
+
+rwa_ages %>%
+  verify((age >= 13 & age <= 85))
+
+rwa_ages_grouped <- rwa_ages %>%
+  mutate(age_group = case_when(
+    age < 18 ~ "under 18",
+    age < 26 ~ "18 to 25",
+    age < 41 ~ "25 to 40",
+    age < 60 ~ "41 to 60",
+    TRUE ~ "over 60"
+  )) %>%
+  select(-age)
+
+# Cleaned family size----
+
+rwa_family_size <- rwa_ages_grouped %>%
+  mutate(family_imputed = if_else(familysize > 10, TRUE, FALSE)) %>%
+  mutate(familysize = if_else(familysize > 10, NaN, familysize)) %>%
+  mutate(familysize = 
+           coalesce(familysize, 
+                               median(rwa_ages_grouped$familysize, na.rm = TRUE)))
+
+
+rwa_family_size %>%
+  verify((familysize >= 0 & familysize <= 10))
+
+# Clean response time ----
+
+rwa_time_taken <- rwa_family_size %>% 
+  mutate(total_time_imputed = if_else(total_time_taken > 1200, TRUE, FALSE)) %>%
+  mutate(total_time_taken = if_else(total_time_taken > 1200, NaN, total_time_taken)) %>%  
+mutate(total_time_taken = 
+         coalesce(total_time_taken, 
+                  median(rwa_family_size$total_time_taken, na.rm = TRUE)))
+
+rwa_time_taken %>%
+  verify((total_time_taken >= 0 & total_time_taken <= 1200))
+
+
+# Remove inaccurate responses----
+rwa_responses <- rwa_time_taken %>%
   filter(surveyaccurate == 1)
 
 # Write CSV -----
-rwa_responses %>% 
+rwa_responses %>%
   write_csv("clean_data/rwa_responses_clean")

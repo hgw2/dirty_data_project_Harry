@@ -1,0 +1,142 @@
+---
+title: "Task 4 Analysis"
+author: "Harry Williams"
+date: "10/11/2020"
+output: 
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_float: yes
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Packages 
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(here)
+```
+
+# Data
+
+```{r, message=FALSE,echo=FALSE}
+
+candy_all <- read_csv(here("clean_data/candy_all_clean.csv"),
+  col_types =
+    cols(
+      gender = "c",
+      country = "c"
+    )
+)
+```
+
+The data comes from three years (2015 to 2017) of candy surveys collected by the science quarterly ranking different candy bars that are given out for trick or treating. Each candy bar received a rank of joy, meh or despair. This report shows the analysis of the result
+
+## Cleaning the data 
+
+The data from all three was formatted differently so each year was cleaned separately before being merged together and cleaned further. A lot of the cleaning could have been completed once the all three years were joined together. However it is faster to process this individually by year rather than in one go. If i had more time I would make this code better by having it run once on one script.
+
+
+
+
+For the all years the candy reviews were kept, the other "scientific" questions were dropped as this was mot relevant for the analysis. 
+
+For ages there were a few responses that were clearly not possible or as text responses. All text strings were removed and then the column was converted to an integer. However there were still responses which were out of an acceptable age range. Any age that was under 10 or over 82 was then imputed to the median ag to give a more accurate representation for ages. 
+
+For going out trick or treating, for those answers that were not answered it can reasonably be assumed that the participant did not go trick or treating so was recoded to false.
+
+As the 2016 and 2017 data also had country and gender columns, these columns were added to 2015 but with NA values
+
+For the 2016 and 2017 data the countries there were a number of different variations in how the countries were written or spelled. For these countries coding was used to find the closest match to the string. For fictional counties or joke responses these countries were imputed as NA. 
+
+ Some candy was listed in different ways eg the different colours of m&ms were listed separately. So similar candy was grouped together. Any candy with no response was dropped before the final analysis was carried out
+
+
+# Analysis
+
+
+## Q.1 What is the total number of candy ratings given across the three years. (number of candy ratings, not number of raters. Don’t count missing values)
+
+```{r}
+candy_all %>%
+  summarise(number_of_candy_reviews = n())
+```
+THis was a very large survey with over 750,000 responses over the three years. 
+
+## Q.2 What was the average age of people who are going out trick or treating and the average age of people not going trick or treating?
+
+```{r, message = FALSE}
+candy_all %>%
+  group_by(going_out) %>%
+  summarise(average_age = mean(age, na.rm = TRUE))
+```
+
+The average age of the participants were in their thirties. With those going out trick or treating being younger than those who were not.
+
+## Q3. For each of joy, despair and meh, which candy bar revived the most of these ratings?
+
+```{r, message=FALSE}
+candy_all %>%
+  group_by(candy_type) %>%
+  summarise(number_of_review = n()) %>%
+  slice_max(number_of_review)
+```
+M&Ms are the most reviewed candy, this is not surprising as there were a number of different iterations of M&Ms. However if M&Ms are not grouped together then Recces Cups become the most reviewed candy
+
+## Q4 How many people rated Starburst as despair?
+
+```{r, message=FALSE}
+candy_all %>%
+  filter(candy_type == "starburst" & rating == "despair") %>%
+  tally(name = "number_of_starburst_as_despair")
+```
+
+1990  rated starbursts as despair.
+
+# Rating Analysis
+
+For the next three questions, despair was  rated -1, joy  +1 and meh  0. US, UK and Canada were kept whilst other countries were classed as 'other'.
+
+```{r, message=FALSE,echo=FALSE}
+candy_rated <- read_csv(here("clean_data/candy_all_rated_clean.csv"),
+  col_types =
+    cols(
+      gender = "c",
+      country = "c"
+    )
+)
+```
+
+## Q6 What was the most popular candy bar by this rating system for each gender in the dataset? 
+
+```{r, message=FALSE}
+candy_rated %>%
+  group_by( gender, candy_type) %>%
+  summarise(score = sum(rating)) %>%
+  slice_max(score, n = 1
+            )
+```
+Again M&Ms were rated as the most popular candy bar. It is important to note though that only gender information was collected in 2016 and 2017.
+
+
+##  Q7 What was the most popular candy bar in each year?
+
+```{r,message=FALSE}
+candy_rated %>%
+  group_by(year, candy_type) %>%
+  summarise(score = sum(rating)) %>%
+  slice_max(score)
+```
+M&Ms feature again as the most popular candy bar. However in 2015, any full sized candy bar was the most popular
+
+##  Q8 What was the most popular candy bar by this rating for people in US, Canada, UK and all other countries?
+
+```{r, message = FALSE}
+candy_rated %>%
+  group_by(country, candy_type) %>%
+  summarise(score = sum(rating)) %>%
+  slice_max(score, with_ties = FALSE)
+```
+Again it is important to note that country data was not collected in 2015. For all the countries M&Ms would appear to be the most popular candy across the majority of the countries
