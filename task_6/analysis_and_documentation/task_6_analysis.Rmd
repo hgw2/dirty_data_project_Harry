@@ -1,0 +1,72 @@
+---
+title: "Dog Survey Analysis"
+author: "Harry Williams"
+date: "15/11/2020"
+output: 
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_float: yes
+---
+# Packages
+```{r, message = FALSE}
+library(tidyverse)
+library(here)
+```
+
+# Data 
+```{r, message = FALSE}
+dog_data <- read_csv(here("clean_data/dog_owners_survey.CSV"))
+```
+
+The data was collected for a survey about dog owners
+
+## Cleaning the Data
+
+For this data set, firstly any duplicate entries were removed. The amount spent on dog food had some entries with text, the text elements were removed and the column was transformed into a numeric column. for the Dogs size and gender, these were both free text entry elements on the survey, the columns were recoded to make sure that columns fell into XS, S, M, L and XL and gender M, F any values that could not be interpreted were listed as NA. 
+
+THere were also a few entries that contained information for more than one dog. These entries were split and the total spending amount was divided by the number of dogs for that ID
+
+# Analysis
+
+## Q1 The client only counts a valid email address as one ending in ‘.com’. How many survey results have a valid email address.
+
+```{r}
+dog_data %>% 
+  filter(str_detect(email, ".com$")) %>%
+     tally(name = "number_of_valid_email_addresses")
+```
+
+## Q2. What’s the average amount spent on dog food for each dog size. 
+
+```{r}
+dog_data %>% 
+  group_by(dog_size) %>% 
+  summarise(avg_spent_on_food_by_size = mean(amount_spent_on_dog_food, na.rm = TRUE))
+```
+
+## Q.3 For owners whose surname starts with a letter in the second half of the alphabet (N onwards) what is the average age of their dog?
+
+```{r}
+dog_data %>% 
+  filter(str_detect(last_name, "^[N-Z]")) %>% 
+  summarise(avg_age_of_dog_second_half_ofalphabet = mean(dog_age, na.rm = TRUE))
+
+```
+
+## Q.4 The dog_age column is the age in dog years. If the conversion is 1 human year = 6 dog years, then what is the average human age for dogs of each gender?
+
+```{r}
+avg_human_age_by_gender <- dog_data %>% 
+  mutate(human_age = dog_age / 6) %>% 
+  group_by(dog_gender) %>% 
+  summarise(avg_human_age = mean(human_age, na.rm = TRUE))
+avg_human_age_by_gender
+```
+
+Create a plot of results of question 4.
+```{r}
+avg_human_age_by_gender %>% 
+  ggplot(aes( x = dog_gender, y = avg_human_age, fill = dog_gender)) +
+  geom_bar(stat = "identity")
+```

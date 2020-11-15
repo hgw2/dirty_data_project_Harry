@@ -79,9 +79,9 @@ The average age of the participants were in their thirties. With those going out
 
 ```{r, message=FALSE}
 candy_all %>%
-  group_by(candy_type) %>%
+  group_by(rating, candy_type) %>%
   summarise(number_of_review = n()) %>%
-  slice_max(number_of_review)
+  filter(number_of_review == max(number_of_review))
 ```
 M&Ms are the most reviewed candy, this is not surprising as there were a number of different iterations of M&Ms. However if M&Ms are not grouped together then Recces Cups become the most reviewed candy
 
@@ -126,7 +126,7 @@ Again M&Ms were rated as the most popular candy bar. It is important to note tho
 ```{r,message=FALSE}
 candy_rated %>%
   group_by(year, candy_type) %>%
-  summarise(score = sum(rating)) %>%
+  summarise(score = mean(rating)) %>%
   slice_max(score)
 ```
 M&Ms feature again as the most popular candy bar. However in 2015, any full sized candy bar was the most popular
@@ -136,7 +136,7 @@ M&Ms feature again as the most popular candy bar. However in 2015, any full size
 ```{r, message = FALSE}
 candy_rated %>%
   group_by(country, candy_type) %>%
-  summarise(score = sum(rating)) %>%
+  summarise(score = mean(rating)) %>%
   slice_max(score, with_ties = FALSE)
 ```
 Again it is important to note that country data was not collected in 2015. For all the countries M&Ms would appear to be the most popular candy across the majority of the countries

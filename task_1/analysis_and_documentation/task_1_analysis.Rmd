@@ -55,6 +55,7 @@ The Olympic Games had the fastest average 100m time. This is not surprising as t
 
 ```{r, message=FALSE}
 decathlon_results %>%
+  distinct(athlete, competition, points) %>% 
   group_by(athlete) %>%
   summarise(total_points = sum(points)) %>%
   slice_max(total_points, n = 1)
